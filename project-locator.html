@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Locator — HydroTop Works</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --gray-50: #f7f7f7;
+  --gray-100: #ebebeb;
+  --gray-200: #d4d4d4;
+  --gray-400: #9a9a9a;
+  --gray-600: #555555;
+  --sw: 320px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--white);
+  color: var(--black);
+  overflow: hidden;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: var(--sw) 1fr;
+  grid-template-areas: "hd hd" "sb mp";
+  height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  grid-area: hd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px 0 0;
+  background: var(--black);
+  z-index: 600;
+}
+
+.logo-block { display: flex; align-items: center; height: 100%; }
+.logo-bar { width: 4px; height: 100%; background: var(--white); }
+.logo-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .12em;
+  color: var(--white);
+  padding: 0 20px;
+  white-space: nowrap;
+}
+.logo-sub { font-size: .55rem; letter-spacing: .2em; color: var(--gray-400); text-transform: uppercase; }
+
+.header-right { display: flex; align-items: center; gap: 24px; }
+.header-stat { text-align: right; }
+.header-stat .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); line-height: 1; }
+.header-stat .l { font-size: .5rem; letter-spacing: .18em; color: var(--gray-400); text-transform: uppercase; }
+.header-divider { width: 1px; height: 28px; background: #333; }
+
+#mob-btn {
+  display: none;
+  background: none;
+  border: 1px solid #444;
+  color: var(--white);
+  border-radius: 3px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .7rem;
+  letter-spacing: .08em;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  grid-area: sb;
+  background: var(--white);
+  border-right: 1px solid var(--black);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 400;
+}
+
+.sb-section { padding: 16px 24px; border-bottom: 1px solid var(--gray-100); }
+.sb-section.tight { padding: 12px 24px; }
+
+.section-label {
+  font-size: .55rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 10px;
+}
+
+.search-wrap { position: relative; }
+.search-wrap input {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 3px;
+  color: var(--black);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .75rem;
+  padding: 9px 12px 9px 32px;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-wrap input::placeholder { color: var(--gray-400); }
+.search-wrap input:focus { border-color: var(--black); background: var(--white); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: .85rem; pointer-events: none; }
+
+.filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.filter-grid.single { grid-template-columns: 1fr; }
+
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gray-400); }
+.fg select {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 3px;
+  color: var(--black);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .68rem;
+  padding: 7px 24px 7px 8px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  transition: border-color .15s;
+}
+.fg select:focus { border-color: var(--black); }
+
+.filter-row-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fg.year { flex: 1; }
+
+.reset-btn {
+  background: var(--black);
+  border: none;
+  border-radius: 3px;
+  color: var(--white);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .6rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.reset-btn:hover { opacity: .7; }
+
+.count-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+.count-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; line-height: 1; }
+.count-label { font-size: .55rem; letter-spacing: .15em; text-transform: uppercase; color: var(--gray-400); }
+
+.legend-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: .58rem; letter-spacing: .05em; color: var(--gray-600); }
+.l-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--black); }
+
+/* Project list */
+.project-list { flex: 1; overflow-y: auto; }
+.project-list::-webkit-scrollbar { width: 3px; }
+.project-list::-webkit-scrollbar-thumb { background: var(--gray-200); }
+
+.p-card {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: background .12s;
+}
+.p-card:hover { background: var(--gray-50); }
+.p-card.active { background: var(--black); }
+
+.card-accent { width: 3px; background: transparent; flex-shrink: 0; transition: background .12s; }
+.p-card.active .card-accent { background: var(--white); }
+.p-card:not(.active):hover .card-accent { background: var(--gray-200); }
+
+.card-body { padding: 12px 16px 12px 13px; flex: 1; min-width: 0; }
+.card-city { font-size: .52rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 2px; }
+.p-card.active .card-city { color: #888; }
+.card-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  line-height: 1.2;
+  color: var(--black);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-card.active .card-name { color: var(--white); }
+
+.card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.c-tag {
+  font-size: .52rem;
+  letter-spacing: .06em;
+  padding: 2px 6px;
+  border: 1px solid var(--gray-200);
+  border-radius: 2px;
+  color: var(--gray-600);
+}
+.p-card.active .c-tag { border-color: #444; color: #aaa; }
+.c-tag.status-tag { border-color: var(--black); color: var(--black); font-weight: 500; }
+.p-card.active .c-tag.status-tag { border-color: var(--white); color: var(--white); }
+.c-tag.product-tag { background: var(--black); color: var(--white); border-color: var(--black); }
+.p-card.active .c-tag.product-tag { background: var(--white); color: var(--black); border-color: var(--white); }
+
+.card-arrow { display: flex; align-items: center; padding-right: 12px; color: var(--gray-200); font-size: .9rem; }
+.p-card:hover .card-arrow { color: var(--gray-400); }
+.p-card.active .card-arrow { color: #444; }
+
+.nores { padding: 40px 24px; text-align: center; font-size: .7rem; letter-spacing: .08em; color: var(--gray-400); display: none; }
+
+/* ── Map ── */
+#map { grid-area: mp; }
+
+/* Leaflet popup */
+.leaflet-popup-content-wrapper {
+  background: var(--white) !important;
+  border: 1px solid var(--black) !important;
+  border-radius: 4px !important;
+  box-shadow: 4px 4px 0 rgba(0,0,0,.15) !important;
+  color: var(--black) !important;
+}
+.leaflet-popup-tip { background: var(--white) !important; }
+.leaflet-popup-close-button { color: var(--gray-400) !important; top: 8px !important; right: 10px !important; font-size: 18px !important; }
+.leaflet-popup-content { margin: 0 !important; font-family: 'IBM Plex Mono', monospace; }
+
+.popup-inner { padding: 16px 18px; min-width: 230px; }
+.popup-city { font-size: .52rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 3px; }
+.popup-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .06em; margin-bottom: 8px; line-height: 1.2; }
+.popup-desc { font-size: .66rem; color: var(--gray-600); line-height: 1.6; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-100); }
+.popup-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-100); }
+.pb { font-size: .55rem; padding: 3px 8px; border-radius: 2px; letter-spacing: .06em; }
+.pb.product { background: var(--black); color: var(--white); }
+.pb.brand { border: 1px solid var(--black); color: var(--black); }
+.popup-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--gray-100); gap: 16px; }
+.popup-row:last-child { border-bottom: none; }
+.popup-k { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gray-400); }
+.popup-v { font-size: .68rem; font-weight: 500; text-align: right; }
+
+.leaflet-control-zoom a { background: var(--white) !important; border-color: var(--gray-200) !important; color: var(--black) !important; font-weight: 500 !important; }
+.leaflet-control-zoom a:hover { background: var(--black) !important; color: var(--white) !important; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .app { grid-template-areas: "hd hd" "mp mp"; grid-template-columns: 1fr; }
+  #mob-btn { display: block; }
+  .header-stat { display: none; }
+  .header-divider { display: none; }
+  .sidebar {
+    position: fixed; top: 56px; left: 0; bottom: 0;
+    width: min(var(--sw), 96vw);
+    transform: translateX(-100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    z-index: 999;
+    border-right: 1px solid var(--black);
+  }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.15); }
+}
+
+.sidebar { animation: slideIn .4s cubic-bezier(.4,0,.2,1) both; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-block">
+      <div class="logo-bar"></div>
+      <div style="padding: 0 20px;">
+        <div class="logo-text">HydroTop Works</div>
+        <div class="logo-sub">Project Locator</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-stat">
+        <div class="n" id="hd-count">20</div>
+        <div class="l">Projecten</div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="header-stat">
+        <div class="n">2024</div>
+        <div class="l">Huidig jaar</div>
+      </div>
+      <button id="mob-btn" onclick="toggleSidebar()">☰ Filter</button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sb-section">
+      <div class="section-label">Zoeken</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="q" placeholder="Naam, stad of omschrijving…" oninput="applyFilters()"/>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="section-label">HydroTop Works</div>
+      <div class="filter-grid">
+        <div class="fg">
+          <label>Product</label>
+          <select id="f-product" onchange="applyFilters()">
+            <option value="">Alle producten</option>
+            <option>HydroCap</option>
+            <option>HydroTop</option>
+            <option>Sky</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Warmtepomp merk</label>
+          <select id="f-merk" onchange="applyFilters()">
+            <option value="">Alle merken</option>
+            <option>Mitsubishi</option>
+            <option>Panasonic</option>
+            <option>Nibe</option>
+            <option>Daikin</option>
+            <option>Bosch</option>
+            <option>Remeha</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="section-label">Overige filters</div>
+      <div class="filter-grid">
+        <div class="fg">
+          <label>Status</label>
+          <select id="f-status" onchange="applyFilters()">
+            <option value="">Alle</option>
+            <option>Gepland</option>
+            <option>In uitvoering</option>
+            <option>Afgerond</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Categorie</label>
+          <select id="f-cat" onchange="applyFilters()"><option value="">Alle</option></select>
+        </div>
+      </div>
+      <div class="filter-row-bottom">
+        <div class="fg year">
+          <label>Jaar</label>
+          <select id="f-jaar" onchange="applyFilters()"><option value="">Alle</option></select>
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="sb-section tight">
+      <div class="legend-row">
+        <div class="legend-item"><div class="l-dot" style="background:#fff"></div>Gepland</div>
+        <div class="legend-item"><div class="l-dot" style="background:#888"></div>In uitvoering</div>
+        <div class="legend-item"><div class="l-dot" style="background:#000"></div>Afgerond</div>
+      </div>
+    </div>
+
+    <div class="count-bar">
+      <div>
+        <div class="count-num" id="count-num">20</div>
+        <div class="count-label">resultaten</div>
+      </div>
+      <div style="font-size:.58rem;color:var(--gray-400);letter-spacing:.06em;">NL — 2022–2026</div>
+    </div>
+
+    <div class="project-list" id="project-list">
+      <div class="nores" id="nores">Geen projecten gevonden.</div>
+    </div>
+
+  </aside>
+
+  <div id="map"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const PROJECTS = [
+  {
+    id:1, naam:"Noord/Zuidlijn Uitbreiding", stad:"Amsterdam", categorie:"Infrastructuur",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Mitsubishi",
+    beschrijving:"Verlenging van de metrolijn Noord/Zuid met twee nieuwe stations in Amsterdam-Noord, inclusief park-and-ride faciliteiten.",
+    lat:52.3791, lng:4.8997, budget:"€ 340M", opdrachtgever:"GVB / Gemeente Amsterdam"
+  },
+  {
+    id:2, naam:"Haven Revitalisering", stad:"Bergen op Zoom", categorie:"Stadsvernieuwing",
+    status:"Gepland", jaar:2025, product:"HydroCap", merk:"Daikin",
+    beschrijving:"Transformatie van het historische havengebied naar een levendig woon-werkgebied met horeca en creatieve bedrijven.",
+    lat:51.4975, lng:4.2860, budget:"€ 28M", opdrachtgever:"Gemeente Bergen op Zoom"
+  },
+  {
+    id:3, naam:"Zonnepark Zuidhorn", stad:"Groningen", categorie:"Duurzaamheid",
+    status:"Afgerond", jaar:2023, product:"Sky", merk:"Nibe",
+    beschrijving:"Aanleg van een grootschalig zonnepark op voormalige landbouwgrond, met een totaalvermogen van 12 MW.",
+    lat:53.2194, lng:6.5665, budget:"€ 9.4M", opdrachtgever:"Provincie Groningen"
+  },
+  {
+    id:4, naam:"Waterfront Woonwijk", stad:"Lelystad", categorie:"Woningbouw",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Panasonic",
+    beschrijving:"Realisatie van 420 duurzame woningen aan het IJmeer, met eigen aanlegsteiger en natuur-inclusief groen.",
+    lat:52.5185, lng:5.4714, budget:"€ 87M", opdrachtgever:"BPD Ontwikkeling"
+  },
+  {
+    id:5, naam:"Binnenstad Klimaatadaptatie", stad:"Den Bosch", categorie:"Duurzaamheid",
+    status:"Gepland", jaar:2026, product:"HydroCap", merk:"Bosch",
+    beschrijving:"Vergroening en waterberging in de historische binnenstad: groene daken, waterpleinen en hittebestendige straten.",
+    lat:51.6978, lng:5.3037, budget:"€ 14M", opdrachtgever:"Gemeente 's-Hertogenbosch"
+  },
+  {
+    id:6, naam:"Dakpark Luchthavenweg", stad:"Eindhoven", categorie:"Woningbouw",
+    status:"Afgerond", jaar:2023, product:"Sky", merk:"Remeha",
+    beschrijving:"Transformatie van een oud kantoorpand naar 180 appartementen met gemeenschappelijk dakpark en warmtepompinstallaties.",
+    lat:51.4416, lng:5.4697, budget:"€ 31M", opdrachtgever:"Trudo Wonen"
+  },
+  {
+    id:7, naam:"Klimaatdijk Waal", stad:"Nijmegen", categorie:"Infrastructuur",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Mitsubishi",
+    beschrijving:"Versterking en verhoging van de Waaldijk met geïntegreerde warmteopslag en duurzame energievoorziening.",
+    lat:51.8442, lng:5.8628, budget:"€ 56M", opdrachtgever:"Waterschap Rivierenland"
+  },
+  {
+    id:8, naam:"Sportcampus Papendorp", stad:"Utrecht", categorie:"Maatschappelijk",
+    status:"Gepland", jaar:2025, product:"HydroCap", merk:"Daikin",
+    beschrijving:"Nieuw topsportcentrum met zwembad, ijsbaan en multifunctionele sporthallen, volledig energieneutraal.",
+    lat:52.0705, lng:5.0847, budget:"€ 74M", opdrachtgever:"Gemeente Utrecht"
+  },
+  {
+    id:9, naam:"Stadsverwarming Oost", stad:"Rotterdam", categorie:"Duurzaamheid",
+    status:"In uitvoering", jaar:2024, product:"Sky", merk:"Nibe",
+    beschrijving:"Aanleg van een nieuw warmtenet voor 2.200 woningen in Rotterdam-Oost, gevoed door aquathermie uit de Maas.",
+    lat:51.9225, lng:4.4792, budget:"€ 43M", opdrachtgever:"Eneco / Gemeente Rotterdam"
+  },
+  {
+    id:10, naam:"Gezondheidscentrum Schilderswijk", stad:"Den Haag", categorie:"Maatschappelijk",
+    status:"Afgerond", jaar:2022, product:"HydroTop", merk:"Bosch",
+    beschrijving:"Nieuwbouw van een wijkgezondheidscentrum met huisartsen, fysiotherapie en dagbesteding voor ouderen.",
+    lat:52.0705, lng:4.2933, budget:"€ 8.2M", opdrachtgever:"HagaZiekenhuis"
+  },
+  {
+    id:11, naam:"Biogas Centrale Westpoort", stad:"Amsterdam", categorie:"Duurzaamheid",
+    status:"Afgerond", jaar:2022, product:"Sky", merk:"Panasonic",
+    beschrijving:"Omzetting van biogasreststromen naar groene warmte voor het Westelijk Havengebied, 3.500 woningequivalenten.",
+    lat:52.3900, lng:4.8350, budget:"€ 18M", opdrachtgever:"AEB Amsterdam"
+  },
+  {
+    id:12, naam:"Renovatie Woontoren Presikhaaf", stad:"Arnhem", categorie:"Woningbouw",
+    status:"Gepland", jaar:2026, product:"HydroCap", merk:"Remeha",
+    beschrijving:"Duurzame renovatie van een naoorlogse flat van 14 woonlagen met nieuwe gevel, dak en collectieve warmtepomp.",
+    lat:51.9851, lng:5.9299, budget:"€ 11M", opdrachtgever:"Volkshuisvesting Arnhem"
+  },
+  {
+    id:13, naam:"Campus Kennispark", stad:"Enschede", categorie:"Infrastructuur",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Mitsubishi",
+    beschrijving:"Uitbreiding van de UT-campus met vier nieuwe onderzoeksgebouwen op geothermische warmtelevering.",
+    lat:52.2434, lng:6.8479, budget:"€ 62M", opdrachtgever:"Universiteit Twente"
+  },
+  {
+    id:14, naam:"Tiny House Park Rijnhaven", stad:"Alphen aan den Rijn", categorie:"Woningbouw",
+    status:"Afgerond", jaar:2023, product:"Sky", merk:"Daikin",
+    beschrijving:"Realisatie van 60 tiny houses op een voormalig industrieterrein, elk voorzien van eigen warmtepomp en zonnepanelen.",
+    lat:52.1317, lng:4.6583, budget:"€ 4.8M", opdrachtgever:"Gemeente Alphen aan den Rijn"
+  },
+  {
+    id:15, naam:"Zorgcluster Vught", stad:"Vught", categorie:"Maatschappelijk",
+    status:"Gepland", jaar:2025, product:"HydroCap", merk:"Nibe",
+    beschrijving:"Nieuwbouw van een woon-zorgcomplex met 220 appartementen voor ouderen, volledig gasloos en BENG-gecertificeerd.",
+    lat:51.6572, lng:5.2946, budget:"€ 36M", opdrachtgever:"Zayaz Wonen"
+  },
+  {
+    id:16, naam:"Industrieel Erfgoed De Sphinx", stad:"Maastricht", categorie:"Stadsvernieuwing",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Bosch",
+    beschrijving:"Herontwikkeling van de historische Sphinx-fabriek naar gemengd woon-werkgebied met creatieve industrie.",
+    lat:50.8514, lng:5.6909, budget:"€ 95M", opdrachtgever:"Ontwikkelcombinatie Sphinx"
+  },
+  {
+    id:17, naam:"Windpark Noordoostpolder", stad:"Emmeloord", categorie:"Duurzaamheid",
+    status:"Afgerond", jaar:2023, product:"Sky", merk:"Panasonic",
+    beschrijving:"Uitbreiding van het windpark met 12 turbines en geïntegreerde warmtepompen voor warmtelevering aan het dorp.",
+    lat:52.7047, lng:5.7475, budget:"€ 28M", opdrachtgever:"Vattenfall NL"
+  },
+  {
+    id:18, naam:"Hotelloods Binnenrotte", stad:"Rotterdam", categorie:"Stadsvernieuwing",
+    status:"Gepland", jaar:2026, product:"HydroCap", merk:"Remeha",
+    beschrijving:"Transformatie van een rijksmonumentale pakhuisloods naar een 180-kamer boetiekhotel met duurzame techniek.",
+    lat:51.9244, lng:4.4737, budget:"€ 22M", opdrachtgever:"Marriott / Provast"
+  },
+  {
+    id:19, naam:"Schoolcluster Leidschenveen", stad:"Den Haag", categorie:"Maatschappelijk",
+    status:"In uitvoering", jaar:2024, product:"HydroTop", merk:"Mitsubishi",
+    beschrijving:"Nieuwbouw van drie basisscholen en een kinderdagverblijf op één klimaatneutraal schoolcampus.",
+    lat:52.0432, lng:4.3543, budget:"€ 16M", opdrachtgever:"Gemeente Den Haag"
+  },
+  {
+    id:20, naam:"Brainport Innovatiehub", stad:"Helmond", categorie:"Infrastructuur",
+    status:"Gepland", jaar:2025, product:"Sky", merk:"Daikin",
+    beschrijving:"Nieuw high-tech bedrijfsverzamelgebouw voor startups en scale-ups in de automotive- en maakindustrie.",
+    lat:51.4825, lng:5.6619, budget:"€ 19M", opdrachtgever:"Gemeente Helmond / ASML"
+  }
+];
+
+const STYLE = {
+  "Gepland":       { fill: "#ffffff", stroke: "#000000" },
+  "In uitvoering": { fill: "#888888", stroke: "#000000" },
+  "Afgerond":      { fill: "#000000", stroke: "#000000" },
+};
+
+function mkIcon(status) {
+  const s = STYLE[status] || { fill: "#ccc", stroke: "#000" };
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:${s.fill};border:2px solid ${s.stroke};box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`,
+    iconSize: [20,20], iconAnchor: [10,10], popupAnchor: [0,-14],
+  });
+}
+
+function mkPopup(p) {
+  return `<div class="popup-inner">
+    <div class="popup-city">${p.stad}</div>
+    <div class="popup-title">${p.naam}</div>
+    <div class="popup-desc">${p.beschrijving}</div>
+    <div class="popup-badges">
+      <span class="pb product">${p.product}</span>
+      <span class="pb brand">${p.merk}</span>
+    </div>
+    <div class="popup-row"><span class="popup-k">Categorie</span><span class="popup-v">${p.categorie}</span></div>
+    <div class="popup-row"><span class="popup-k">Status</span><span class="popup-v">${p.status}</span></div>
+    <div class="popup-row"><span class="popup-k">Jaar</span><span class="popup-v">${p.jaar}</span></div>
+    <div class="popup-row"><span class="popup-k">Budget</span><span class="popup-v">${p.budget}</span></div>
+    <div class="popup-row"><span class="popup-k">Opdrachtgever</span><span class="popup-v">${p.opdrachtgever}</span></div>
+  </div>`;
+}
+
+const map = L.map('map', { zoomControl: false }).setView([52.25, 5.2], 7);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  maxZoom: 19,
+}).addTo(map);
+
+let markers = {}, activeId = null;
+
+(function init() {
+  const cats  = [...new Set(PROJECTS.map(p => p.categorie))].sort();
+  const years = [...new Set(PROJECTS.map(p => p.jaar))].sort((a,b) => a-b);
+  cats.forEach(c  => document.getElementById('f-cat').add(new Option(c, c)));
+  years.forEach(y => document.getElementById('f-jaar').add(new Option(y, y)));
+  renderAll(PROJECTS);
+})();
+
+function renderAll(list) {
+  renderList(list);
+  syncMarkers(list);
+  const n = list.length;
+  document.getElementById('count-num').textContent = n;
+  document.getElementById('hd-count').textContent = n;
+}
+
+function renderList(list) {
+  const container = document.getElementById('project-list');
+  container.querySelectorAll('.p-card').forEach(e => e.remove());
+  document.getElementById('nores').style.display = list.length ? 'none' : 'block';
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'p-card' + (p.id === activeId ? ' active' : '');
+    card.dataset.id = p.id;
+    card.innerHTML = `
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-city">${p.stad}</div>
+        <div class="card-name">${p.naam}</div>
+        <div class="card-tags">
+          <span class="c-tag status-tag">${p.status}</span>
+          <span class="c-tag product-tag">${p.product}</span>
+          <span class="c-tag">${p.merk}</span>
+          <span class="c-tag">${p.jaar}</span>
+        </div>
+      </div>
+      <div class="card-arrow">›</div>`;
+    card.addEventListener('click', () => focusProject(p.id));
+    container.appendChild(card);
+  });
+}
+
+function syncMarkers(list) {
+  const vis = new Set(list.map(p => p.id));
+  Object.keys(markers).forEach(id => {
+    if (!vis.has(+id)) { map.removeLayer(markers[id]); delete markers[id]; }
+  });
+  list.forEach(p => {
+    if (markers[p.id]) return;
+    const m = L.marker([p.lat, p.lng], { icon: mkIcon(p.status) })
+      .addTo(map).bindPopup(mkPopup(p), { maxWidth: 300 });
+    m.on('click', () => { setActive(p.id); scrollCard(p.id); });
+    markers[p.id] = m;
+  });
+}
+
+function focusProject(id) {
+  const p = PROJECTS.find(p => p.id === id);
+  if (!p) return;
+  setActive(id);
+  map.flyTo([p.lat, p.lng], 14, { duration: .65 });
+  markers[id]?.openPopup();
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+}
+
+function setActive(id) {
+  activeId = id;
+  document.querySelectorAll('.p-card').forEach(el =>
+    el.classList.toggle('active', +el.dataset.id === id));
+}
+
+function scrollCard(id) {
+  document.querySelector(`.p-card[data-id="${id}"]`)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function applyFilters() {
+  const q       = document.getElementById('q').value.toLowerCase();
+  const cat     = document.getElementById('f-cat').value;
+  const stat    = document.getElementById('f-status').value;
+  const jaar    = document.getElementById('f-jaar').value;
+  const product = document.getElementById('f-product').value;
+  const merk    = document.getElementById('f-merk').value;
+
+  const res = PROJECTS.filter(p =>
+    (!q       || p.naam.toLowerCase().includes(q) || p.stad.toLowerCase().includes(q) || p.beschrijving.toLowerCase().includes(q)) &&
+    (!cat     || p.categorie === cat) &&
+    (!stat    || p.status    === stat) &&
+    (!jaar    || String(p.jaar) === jaar) &&
+    (!product || p.product   === product) &&
+    (!merk    || p.merk      === merk)
+  );
+
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  renderAll(res);
+}
+
+function resetFilters() {
+  ['q','f-cat','f-status','f-jaar','f-product','f-merk'].forEach(id =>
+    document.getElementById(id).value = '');
+  applyFilters();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+map.on('click', () => {
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+});
+</script>
+</body>
+</html>

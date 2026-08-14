@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sonner-demo — HydroTop Works</title>
+<meta name="description" content="Demo van sonner-meldingen in Apple-stijl: gestapeld, veegbaar, met promise-toasts en de iOS-activity-indicator."/>
+<link rel="stylesheet" href="apple.css"/>
+<link rel="stylesheet" href="sonner.css"/>
+<style>
+.demo-hero { padding: 140px 0 56px; }
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-l);
+  padding: 28px;
+  margin-top: 28px;
+}
+.panel + .panel { margin-top: 18px; }
+.panel h3 { margin-bottom: 4px; }
+.panel .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.opt-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 14px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.opt-row:last-child { border-bottom: none; }
+.opt-row .lbl { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+.opt-row .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+table.spec { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 14px; }
+table.spec th, table.spec td { text-align: left; padding: 12px 14px 12px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+table.spec th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); font-weight: 600; }
+table.spec td.el { font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+table.spec td .src { display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 3px; font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; }
+table.spec td { color: var(--text-secondary); }
+.table-scroll { overflow-x: auto; }
+code { font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--bg-elevated); border: 1px solid var(--hairline); border-radius: 5px; padding: 1px 5px; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="index.html">HydroTop Works</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="locator.html">Project Locator</a>
+    <a href="#uitleg">Wat is toegepast?</a>
+  </div>
+</nav>
+
+<main class="page">
+
+  <section class="demo-hero">
+    <div class="eyebrow">Demo-app</div>
+    <h1>Meldingen die aanvoelen<br/>als iOS.</h1>
+    <p class="lede" style="margin-top:18px">
+      Een vanilla-JS-port van <a href="https://github.com/emilkowalski/sonner" style="color:inherit">sonner</a>,
+      met de originele stylesheet uit de repo. Klik, hover over de stapel, en veeg een melding weg
+      (naar rechts of naar beneden).
+    </p>
+
+    <div class="panel">
+      <h3>Toast-typen</h3>
+      <p class="sub">De zes varianten van sonner, met de originele iconen uit <code>src/assets.tsx</code>.</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary btn-small" onclick="toast('Nieuw project toegevoegd')">Standaard</button>
+        <button class="btn btn-secondary btn-small" onclick="toast.success('Project opgeslagen', { description: 'Zonnepark Zuidhorn — Groningen' })">Succes</button>
+        <button class="btn btn-secondary btn-small" onclick="toast.info('20 projecten in beeld', { description: 'Gefilterd op status: In uitvoering' })">Info</button>
+        <button class="btn btn-secondary btn-small" onclick="toast.warning('Budget bijna bereikt', { description: 'Noord/Zuidlijn: 92% van € 340M gebruikt' })">Waarschuwing</button>
+        <button class="btn btn-secondary btn-small" onclick="toast.error('Opslaan mislukt', { description: 'Geen verbinding met de server' })">Fout</button>
+        <button class="btn btn-secondary btn-small" onclick="demoPromise()">Promise (laden…)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Interactie</h3>
+      <p class="sub">Actieknoppen en stapelgedrag zoals in het origineel.</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary btn-small" onclick="toast('Filter gewist', { action: { label: 'Ongedaan maken', onClick: function(){ toast.success('Filter hersteld'); } } })">Met actieknop</button>
+        <button class="btn btn-secondary btn-small" onclick="demoStack()">Stapel (3+ toasts)</button>
+      </div>
+      <div style="margin-top:20px">
+        <div class="opt-row">
+          <div>
+            <div class="lbl">Rich colors</div>
+            <div class="hint">Gebruik sonner's gekleurde paletten voor succes/info/waarschuwing/fout.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rich" onchange="toast.richColors = this.checked"/>
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="opt-row">
+          <div>
+            <div class="lbl">Donker thema voor meldingen</div>
+            <div class="hint">Standaard volgen de meldingen je systeeminstelling, net als sonner.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="dark" onchange="toast.setTheme(this.checked ? 'dark' : 'system')"/>
+            <span class="track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="uitleg">
+    <div class="eyebrow">Verantwoording</div>
+    <h2>Wat is er precies toegepast uit het Apple-design van sonner?</h2>
+    <p class="lede">
+      Elke waarde hieronder is overgenomen uit de broncode van de repo — het bronbestand
+      en de betreffende regel of constante staan erbij.
+    </p>
+
+    <div class="table-scroll">
+    <table class="spec">
+      <thead><tr><th>Element</th><th>Toegepaste waarde</th><th>Apple-referentie</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="el">Typografie<span class="src">styles.css, [data-sonner-toaster]</span></td>
+          <td>Systeemfont-stack <code>ui-sans-serif, system-ui, -apple-system, …</code>; titel 500, omschrijving 400, 13&nbsp;px.</td>
+          <td>SF Pro — Apple's systeemletter, met de subtiele gewichtscontrasten van iOS-notificaties.</td>
+        </tr>
+        <tr>
+          <td class="el">Vorm &amp; diepte<span class="src">styles.css, [data-styled='true']</span></td>
+          <td>Radius 8&nbsp;px, hairline-rand 1&nbsp;px, schaduw <code>0 4px 12px rgba(0,0,0,.1)</code>, breedte 356&nbsp;px, padding 16&nbsp;px.</td>
+          <td>Zachte, zwevende kaarten in plaats van harde randen — het "card"-idioom van iOS/macOS.</td>
+        </tr>
+        <tr>
+          <td class="el">Stapeling<span class="src">index.tsx: VISIBLE_TOASTS=3, GAP=14</span></td>
+          <td>Maximaal 3 zichtbaar; elke laag 5% kleiner (<code>scale: 1 − n·0.05</code>) en 14&nbsp;px verschoven; hover klapt de stapel uit met echte hoogte-offsets.</td>
+          <td>Het Berichtencentrum van iOS: gestapelde notificaties die uitklappen bij aanraken.</td>
+        </tr>
+        <tr>
+          <td class="el">Beweging<span class="src">styles.css, transition-regels</span></td>
+          <td>Transform/opacity/hoogte in 400&nbsp;ms; binnenkomst vanaf <code>translateY(100%)</code>, vertrek met fade + lift.</td>
+          <td>Apple's rustige, fysieke beweging — niets "springt", alles glijdt.</td>
+        </tr>
+        <tr>
+          <td class="el">Veeggebaar<span class="src">index.tsx: SWIPE_THRESHOLD=45, velocity 0.11</span></td>
+          <td>Wegvegen bij ≥ 45&nbsp;px verplaatsing óf snelheid &gt; 0,11&nbsp;px/ms; anders veert de toast terug.</td>
+          <td>iOS-notificaties wegvegen: de snelheid van je gebaar telt, niet alleen de afstand.</td>
+        </tr>
+        <tr>
+          <td class="el">Activity-indicator<span class="src">assets.tsx: Loader, styles.css: .sonner-spinner</span></td>
+          <td>12 balkjes die na elkaar vervagen (<code>sonner-spin</code>, 1,2&nbsp;s lineair) bij promise/laden.</td>
+          <td>Een directe evenknie van Apple's <code>UIActivityIndicatorView</code> (het klassieke iOS-laadwiel).</td>
+        </tr>
+        <tr>
+          <td class="el">Kleur<span class="src">styles.css: --gray1…12 + themapaletten</span></td>
+          <td>Neutrale 12-staps grijsschaal; aparte licht/donker-paletten, incl. "rich colors" per toast-type.</td>
+          <td>Apple's terughoudende kleurgebruik: monochroom, met kleur alleen als betekenisdrager.</td>
+        </tr>
+        <tr>
+          <td class="el">Toegankelijkheid<span class="src">styles.css: @media (prefers-reduced-motion)</span></td>
+          <td>Alle animaties uit wanneer het systeem "verminder beweging" aangeeft; focusringen op knoppen.</td>
+          <td>Apple's Human Interface Guidelines: respecteer de bewegingsvoorkeur van de gebruiker.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p style="margin-top:28px;color:var(--text-secondary);font-size:14px;max-width:720px">
+      Daarnaast is de designtaal van sonner doorgetrokken naar deze pagina's zelf: dezelfde grijsschaal en
+      font-stack als tokens in <code>apple.css</code>, een frosted-glass navigatiebalk
+      (<code>backdrop-filter: saturate(180%) blur(20px)</code>, zoals op Apple.com), pill-knoppen met
+      radius 980&nbsp;px en een iOS-stijl schakelaar (51×31&nbsp;px, <code>#34c759</code>-groen) hierboven.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="page" style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span>© 2026 HydroTop Works — Sonner-demo</span>
+    <span>Origineel: <a href="https://github.com/emilkowalski/sonner">emilkowalski/sonner</a> (MIT)</span>
+  </div>
+</footer>
+
+<script src="sonner.js"></script>
+<script>
+function demoPromise() {
+  toast.promise(
+    new Promise(function (resolve) { setTimeout(resolve, 2200); }),
+    {
+      loading: 'Projecten laden…',
+      success: '20 projecten geladen',
+      error: 'Laden mislukt'
+    }
+  );
+}
+
+function demoStack() {
+  var msgs = [
+    ['success', 'Project opgeslagen'],
+    ['info', 'Kaart bijgewerkt'],
+    ['success', 'Filter toegepast'],
+    ['warning', 'Eén project zonder locatie']
+  ];
+  msgs.forEach(function (m, i) {
+    setTimeout(function () { toast[m[0]](m[1]); }, i * 450);
+  });
+}
+</script>
+</body>
+</html>
